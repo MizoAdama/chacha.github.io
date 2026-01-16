@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple IPTV Editor</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; line-height: 1.6; background: #f4f4f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input[type="text"] { width: 70%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; }
+        #channelList { max-height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-top: 10px; }
+        .channel-item { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #fafafa; }
+        .channel-item:hover { background: #f9f9f9; }
+        .group-badge { font-size: 0.8em; background: #eee; padding: 2px 6px; border-radius: 10px; margin-left: 10px; color: #666; }
+        .stats { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>IPTV List Lighter</h2>
+    
+    <div class="controls">
+        <input type="text" id="m3uUrl" placeholder="Paste M3U URL here...">
+        <button onclick="fetchPlaylist()">Load List</button>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="searchTerm" placeholder="Search channels or groups..." oninput="renderChannels()">
+        <button onclick="exportM3U()" style="background: #28a745;">Export Lighter File</button>
+    </div>
+
+    <div class="stats" id="stats">Channels loaded: 0</div>
+    
+    <div id="channelList">
+        </div>
+</div>
+
+<script>
+    let allChannels = [];
+
+    async function fetchPlaylist() {
+        const url = document.getElementById('m3uUrl').value;
+        if (!url) return alert("Please enter a URL");
+
+        try {
+            // Using a CORS proxy to bypass browser restrictions
+            const proxy = "https://corsproxy.io/?";
+            const response = await fetch(proxy + encodeURIComponent(url));
+            const data = await response.text();
+            parseM3U(data);
+        } catch (err) {
+            alert("Error loading file. It might be a CORS issue or invalid URL.");
+        }
+    }
+
+    function parseM3U(data) {
+        const lines = data.split('\n');
+        allChannels = [];
+        let currentMetadata = "";
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('#EXTINF:')) {
+                currentMetadata = line;
+            } else if (line.startsWith('http') && currentMetadata) {
+                const nameMatch = currentMetadata.match(/,(.*)$/);
+                const groupMatch = currentMetadata.match(/group-title="(.*?)"/);
+                
+                allChannels.push({
+                    metadata: currentMetadata,
+                    name: nameMatch ? nameMatch[1] : "Unknown Channel",
+                    group: groupMatch ? groupMatch[1] : "No Group",
+                    url: line,
+                    selected: true
+                });
+                currentMetadata = "";
+            }
+        }
+        renderChannels();
+    }
+
+    function renderChannels() {
+        const listDiv = document.getElementById('channelList');
+        const searchTerm = document.getElementById('searchTerm').value.toLowerCase();
+        listDiv.innerHTML = '';
+
+        const filtered = allChannels.filter(c => 
+            c.name.toLowerCase().includes(searchTerm) || 
+            c.group.toLowerCase().includes(searchTerm)
+        );
+
+        filtered.forEach((channel, index) => {
+            const item = document.createElement('div');
+            item.className = 'channel-item';
+            item.innerHTML = `
+                <input type="checkbox" ${channel.selected ? 'checked' : ''} onchange="toggleChannel(${allChannels.indexOf(channel)})">
+                <span>${channel.name}</span>
+                <span class="group-badge">${channel.group}</span>
+            `;
+            listDiv.appendChild(item);
+        });
+
+        document.getElementById('stats').innerText = `Total: ${allChannels.length} | Selected: ${allChannels.filter(c => c.selected).length}`;
+    }
+
+    function toggleChannel(index) {
+        allChannels[index].selected = !allChannels[index].selected;
+        document.getElementById('stats').innerText = `Total: ${allChannels.length} | Selected: ${allChannels.filter(c => c.selected).length}`;
+    }
+
+    function exportM3U() {
+        const selected = allChannels.filter(c => c.selected);
+        if (selected.length === 0) return alert("No channels selected!");
+
+        let output = "#EXTM3U\n";
+        selected.forEach(c => {
+            output += `${c.metadata}\n${c.url}\n`;
+        });
+
+        // For now, we trigger a local download.
+        // To save to the cloud, you'd call your Gist API function here.
+        const blob = new Blob([output], { type: 'text/plain' });
+        const element = document.createElement('a');
+        element.href = URL.createObjectURL(blob);
+        element.download = "lighter_list.m3u";
+        document.body.appendChild(element);
+        element.click();
+    }
+</script>
+
+</body>
+</html>
