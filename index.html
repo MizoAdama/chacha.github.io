@@ -1,99 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV List Lighter & Host</title>
-    <style>
-        :root { --primary: #2563eb; --success: #16a34a; --bg: #f8fafc; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        h1 { margin-top: 0; font-size: 1.5rem; color: #0f172a; }
-        
-        .section { margin-bottom: 25px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        
-        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
-        button { padding: 10px 16px; cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
-        .btn-alt { background: #64748b; }
-        .btn-save { background: var(--success); width: 100%; margin-top: 10px; font-size: 1rem; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IPTV List Loader</title>
 
-        #channelList { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; margin-top: 15px; }
-        .channel-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
-        .channel-item:hover { background: #f8fafc; }
-        .group-tag { font-size: 0.7rem; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; margin-left: auto; color: #475569; }
-        
-        .status-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.85rem; font-weight: bold; }
-        #gistLink { word-break: break-all; color: var(--primary); display: block; margin-top: 10px; }
-    </style>
+  <style>
+    :root { --primary:#2563eb; --success:#16a34a; --bg:#f8fafc; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 20px;
+      color: #1e293b;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,.1);
+    }
+    h1 { margin-top: 0; font-size: 1.4rem; }
+    .section {
+      margin-bottom: 25px;
+      padding: 15px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+    button {
+      padding: 10px 16px;
+      cursor: pointer;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    button.btn-alt { background:#64748b; }
+    #channelList {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .channel-item {
+      padding: 6px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: .9rem;
+    }
+    .status-bar {
+      display:flex;
+      justify-content:space-between;
+      font-weight:bold;
+      font-size:.85rem;
+    }
+  </style>
 </head>
+
 <body>
-
 <div class="container">
-    <h1>Step 1: Load Your List</h1>
-    <div class="section grid">
-        <div>
-            <label>Option A: Remote URL</label>
-            <input type="text" id="m3uUrl" placeholder="http://provider-link.com/list.m3u">
-            <button onclick="fetchFromUrl()">Fetch via Proxy</button>
-        </div>
-        <div>
-            <label>Option B: Local File (Better)</label><br><br>
-            <input type="file" id="fileInput" accept=".m3u,.m3u8" style="display:none" onchange="loadFromFile(event)">
-            <button class="btn-alt" onclick="document.getElementById('fileInput').click()">Browse M3U File</button>
-        </div>
-    </div>
 
-    <h1>Step 2: Filter Channels</h1>
-    <div class="section">
-        <input type="text" id="searchTerm" placeholder="Search by name or category..." oninput="renderChannels()">
-        <div class="status-bar">
-            <span id="stats">Loaded: 0 | Selected: 0</span>
-            <button class="btn-alt" onclick="toggleAll()">Toggle All</button>
-        </div>
-        <div id="channelList"></div>
+  <h1>Step 1: Load M3U Playlist</h1>
+  <div class="section grid">
+    <div>
+      <label>Remote URL (via Proxy)</label>
+      <input id="m3uUrl" type="text" placeholder="http://provider.com/list.m3u">
+      <button onclick="fetchFromUrl()">Fetch via Proxy</button>
     </div>
+    <div>
+      <label>Local File (Recommended)</label><br><br>
+      <input type="file" id="fileInput" accept=".m3u,.m3u8" style="display:none">
+      <button class="btn-alt" onclick="document.getElementById('fileInput').click()">Browse File</button>
+    </div>
+  </div>
 
-    <h1>Step 3: Save & Host</h1>
-    <div class="section">
-        <label>GitHub Personal Access Token (Optional for cloud hosting)</label>
-        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
-        <button class="btn-save" onclick="saveToCloud()">Upload to GitHub Gist & Get URL</button>
-        <a id="gistLink" target="_blank"></a>
-        <button class="btn-alt" onclick="downloadLocally()" style="width:100%; margin-top:5px;">Just Download File Locally</button>
+  <h1>Step 2: Channels</h1>
+  <div class="section">
+    <input type="text" id="search" placeholder="Search..." oninput="renderChannels()">
+    <div class="status-bar">
+      <span id="stats">Loaded: 0</span>
     </div>
+    <div id="channelList"></div>
+  </div>
+
 </div>
 
 <script>
-    let allChannels = [];
+/* ================= CONFIG ================= */
 
-    // --- LOADING LOGIC ---
-    async function fetchFromUrl() {
-        const url = document.getElementById('m3uUrl').value;
-        const proxy = "https://corsproxy.io/?";
-        try {
-            const response = await fetch(proxy + encodeURIComponent(url));
-            const text = await response.text();
-            parseM3U(text);
-        } catch (e) { alert("CORS Error. Use the 'Local File' option instead."); }
+// 🔴 REPLACE if you rename your Worker
+const WORKER_PROXY = "https://chacha.mizo-adama.workers.dev";
+
+/* ================= STATE ================= */
+
+let allChannels = [];
+
+/* ================= LOADERS ================= */
+
+async function fetchFromUrl() {
+  const url = document.getElementById("m3uUrl").value.trim();
+  if (!url) {
+    alert("Please enter an M3U URL");
+    return;
+  }
+
+  const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(url)}`;
+  document.getElementById("stats").textContent = "Loading playlist...";
+
+  try {
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error("Proxy failed");
+    const text = await res.text();
+    parseM3U(text);
+  } catch (e) {
+    alert("Failed to load playlist via proxy");
+    console.error(e);
+  }
+}
+
+document.getElementById("fileInput").addEventListener("change", e => {
+  const reader = new FileReader();
+  reader.onload = ev => parseM3U(ev.target.result);
+  reader.readAsText(e.target.files[0]);
+});
+
+/* ================= PARSER ================= */
+
+function parseM3U(data) {
+  const lines = data.split(/\r?\n/);
+  allChannels = [];
+  let name = "";
+
+  for (let line of lines) {
+    line = line.trim();
+    if (line.startsWith("#EXTINF")) {
+      const match = line.split(",");
+      name = match[match.length - 1] || "Unknown";
+    } else if (line.startsWith("http")) {
+      allChannels.push({ name, url: line });
+      name = "";
     }
+  }
 
-    function loadFromFile(event) {
-        const reader = new FileReader();
-        reader.onload = (e) => parseM3U(e.target.result);
-        reader.readAsText(event.target.files[0]);
-    }
+  renderChannels();
+}
 
-    // --- PARSER ---
-    function parseM3U(data) {
-        const lines = data.split(/\r?\n/);
-        allChannels = [];
-        let currentMeta = "";
+/* ================= RENDER ================= */
 
-        lines.forEach(line => {
-            line = line.trim();
-            if (line.startsWith('#EXTINF:')) {
-                currentMeta = line;
-            } else if (line.startsWith('http') && currentMeta) {
-                const name =
+function renderChannels() {
+  const list = document.getElementById("channelList");
+  const search = document.getElementById("search").value.toLowerCase();
+  list.innerHTML = "";
+
+  const filtered = allChannels.filter(c =>
+    c.name.toLowerCase().includes(search)
+  );
+
+  filtered.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "channel-item";
+    div.textContent = c.name;
+    list.appendChild(div);
+  });
+
+  document.getElementById("stats").textContent =
+    `Loaded: ${filtered.length} / ${allChannels.length}`;
+}
+</script>
+
+</body>
+</html>
